@@ -1,3 +1,10 @@
+== Info about this fork
+
+Adds the functionality to specify a third parameter, `local_host` to `::new`,
+specifying the local IP address to bind. It may be a string IP to bind that
+particular IP address, `nil` to bind the default IP, or `:random` to randomly
+choose the local IP address to bind.
+
 = net-http-persistent
 
 * http://docs.seattlerb.org/net-http-persistent

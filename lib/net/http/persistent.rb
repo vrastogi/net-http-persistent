@@ -221,6 +221,11 @@ class Net::HTTP::Persistent
   ].compact
 
   ##
+  # The list of local IP addresses, computed lazily once
+
+  @@local_ips = nil
+
+  ##
   # Error class for errors raised by Net::HTTP::Persistent.  Various
   # SystemCallErrors are re-raised with a human-readable message under this
   # class.
@@ -479,8 +484,9 @@ class Net::HTTP::Persistent
   #   proxy.user     = 'AzureDiamond'
   #   proxy.password = 'hunter2'
 
-  def initialize name = nil, proxy = nil
+  def initialize name = nil, proxy = nil, local_host = nil
     @name = name
+    @local_host = local_host
 
     @debug_output     = nil
     @proxy_uri        = nil
@@ -526,6 +532,10 @@ class Net::HTTP::Persistent
     @retried_on_ruby_2 = !@ruby_1
 
     self.proxy = proxy if proxy
+    # http://stackoverflow.com/a/14019353/567555
+    if local_host == :random then
+      @@local_ips = Socket.ip_address_list.select {|a| a.ipv4? ? !(a.ipv4_private? || a.ipv4_loopback?) : !(a.ipv6_sitelocal? || a.ipv6_linklocal? || a.ipv6_loopback?) }.map(&:ip_address).uniq
+    end
   end
 
   ##
@@ -623,6 +633,13 @@ class Net::HTTP::Persistent
     unless connection = connections[connection_id] then
       connections[connection_id] = http_class.new(*net_http_args)
       connection = connections[connection_id]
+      if @local_host then
+        if @local_host == :random then
+          connection.local_host = @@local_ips.sample
+        else
+          connection.local_host = @local_host
+        end
+      end
       ssl connection if use_ssl
     else
       reset connection if expired? connection
