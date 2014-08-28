@@ -533,7 +533,7 @@ class Net::HTTP::Persistent
 
     self.proxy = proxy if proxy
     # http://stackoverflow.com/a/14019353/567555
-    if local_host == :random then
+    if local_host == :random and not @@local_ips then
       @@local_ips = Socket.ip_address_list.select {|a| a.ipv4? ? !(a.ipv4_private? || a.ipv4_loopback?) : !(a.ipv6_sitelocal? || a.ipv6_linklocal? || a.ipv6_loopback?) }.map(&:ip_address).uniq
     end
   end
